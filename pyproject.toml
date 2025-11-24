@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name='cascadoc'
+authors = [{name='Kopylov Daniil', email='it-daniil@yandex.ru'}]
+
+readme = 'README.md'
+license = {file = 'LICENSE'}
+
+requires-python = '>=3.9'
+
+dependencies = [
+  'numpy',
+  'matplotlib',
+  'scipy',
+]
+
+version = '0.0.2' 
+
+[tool.setuptools]
+packages = {find = {where = ["src"]}}
+package-dir = {"cascadoc" = "src/cascadoc"}
