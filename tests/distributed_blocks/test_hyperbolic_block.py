@@ -4,7 +4,7 @@
 """
 import unittest
 import numpy as np
-from cascadoc.blocks.distributed_blocks.hyperbolic_block import HyperbolicBlock
+from cascadoc_deepseek.blocks.distributed_blocks.hyperbolic_block import HyperbolicBlock
 
 class TestHyperbolicBlock(unittest.TestCase):
     """Тесты для HyperbolicBlock"""

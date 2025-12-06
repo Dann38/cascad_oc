@@ -4,7 +4,7 @@
 """
 import matplotlib.pyplot as plt
 from typing import List, Tuple
-from cascadoc.blocks.distributed_blocks.dtype.characteristic_mesh import CharacteristicMesh
+from cascadoc_deepseek.blocks.distributed_blocks.dtype.characteristic_mesh import CharacteristicMesh
 
 def plot_characteristic_mesh(mesh: CharacteristicMesh, figsize=(12, 8), node_size=20):
     """Визуализирует характеристическую сетку"""

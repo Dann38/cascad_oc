@@ -6,8 +6,8 @@ import unittest
 import sys
 import os
 
-from cascadoc.blocks.distributed_blocks.dtype.rectangle import Rectangle
-from cascadoc.blocks.distributed_blocks.dtype.discretization import Discretization
+from cascadoc_deepseek.blocks.distributed_blocks.dtype.rectangle import Rectangle
+from cascadoc_deepseek.blocks.distributed_blocks.dtype.discretization import Discretization
 
 class TestDiscretization(unittest.TestCase):
     """Тесты для класса Discretization"""

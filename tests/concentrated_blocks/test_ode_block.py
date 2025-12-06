@@ -4,8 +4,8 @@
 """
 import unittest
 import numpy as np
-from cascadoc.blocks.concentrated_blocks.ode_block import ODEBlock
-from cascadoc.blocks.concentrated_blocks.ode_helpers import create_linear_ode
+from cascadoc_deepseek.blocks.concentrated_blocks.ode_block import ODEBlock
+from cascadoc_deepseek.blocks.concentrated_blocks.ode_helpers import create_linear_ode
 
 class TestODEBlock(unittest.TestCase):
     """Тесты для ODEBlock"""

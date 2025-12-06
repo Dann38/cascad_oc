@@ -7,7 +7,7 @@ import sys
 import os
 
 
-from cascadoc.blocks.distributed_blocks.dtype.rectangle import Rectangle
+from cascadoc_deepseek.blocks.distributed_blocks.dtype.rectangle import Rectangle
 
 class TestRectangle(unittest.TestCase):
     """Тесты для класса Rectangle"""

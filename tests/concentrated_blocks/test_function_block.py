@@ -4,8 +4,8 @@
 """
 import unittest
 import numpy as np
-from cascadoc.blocks.concentrated_blocks.function_block import FunctionBlock
-from cascadoc.blocks.concentrated_blocks.function_helpers import (
+from cascadoc_deepseek.blocks.concentrated_blocks.function_block import FunctionBlock
+from cascadoc_deepseek.blocks.concentrated_blocks.function_helpers import (
     create_constant_block, 
     create_sinusoidal_block,
     create_step_block,

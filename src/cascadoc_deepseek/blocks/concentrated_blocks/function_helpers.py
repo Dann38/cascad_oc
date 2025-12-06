@@ -4,7 +4,7 @@
 """
 from typing import Callable, Union
 import numpy as np
-from cascadoc.blocks.concentrated_blocks.function_block import FunctionBlock
+from cascadoc_deepseek.blocks.concentrated_blocks.function_block import FunctionBlock
 
 def create_constant_block(name: str, value: float) -> FunctionBlock:
     """Создает блок с постоянным значением"""

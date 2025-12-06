@@ -4,7 +4,7 @@
 """
 import numpy as np
 from typing import Dict, Any, Callable, Optional
-from cascadoc.blocks.concentrated_blocks.base_concentrated_block import BaseConcentratedBlock
+from cascadoc_deepseek.blocks.concentrated_blocks.base_concentrated_block import BaseConcentratedBlock
 
 class ODEBlock(BaseConcentratedBlock):
     """Блок для решения ОДУ с возможностью соединения с другими блоками"""

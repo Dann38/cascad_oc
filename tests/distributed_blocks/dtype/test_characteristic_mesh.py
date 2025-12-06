@@ -6,7 +6,7 @@ import unittest
 import sys
 import os
 
-from cascadoc.blocks.distributed_blocks.dtype.characteristic_mesh import CharacteristicMesh
+from cascadoc_deepseek.blocks.distributed_blocks.dtype.characteristic_mesh import CharacteristicMesh
 
 class TestCharacteristicMesh(unittest.TestCase):
     """Тесты для класса CharacteristicMesh"""

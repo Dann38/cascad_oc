@@ -4,7 +4,7 @@
 """
 from typing import Dict, Any, Callable, Union, Optional
 import numpy as np
-from cascadoc.blocks.concentrated_blocks.base_concentrated_block import BaseConcentratedBlock
+from cascadoc_deepseek.blocks.concentrated_blocks.base_concentrated_block import BaseConcentratedBlock
 
 class FunctionBlock(BaseConcentratedBlock):
     """

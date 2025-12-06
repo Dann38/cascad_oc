@@ -4,8 +4,8 @@
 """
 from typing import Dict, Any, Callable, Tuple, Optional
 import numpy as np
-from cascadoc.blocks.distributed_blocks.base_distributed_block import BaseDistributedBlock
-from cascadoc.blocks.distributed_blocks.dtype.characteristic_mesh import CharacteristicMesh
+from cascadoc_deepseek.blocks.distributed_blocks.base_distributed_block import BaseDistributedBlock
+from cascadoc_deepseek.blocks.distributed_blocks.dtype.characteristic_mesh import CharacteristicMesh
 
 class HyperbolicBlock(BaseDistributedBlock):
     """Блок для решения гиперболических систем уравнений"""
