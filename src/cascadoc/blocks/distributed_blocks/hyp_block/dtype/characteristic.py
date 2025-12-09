@@ -4,7 +4,7 @@
 """
 from typing import Tuple, Optional, Dict, List
 from .rectangle import Rectangle
-
+EPS = 1e-10
 class Characteristic:
     """Характеристика с узлами внутри расчетной области"""
     
@@ -47,7 +47,7 @@ class Characteristic:
         for boundary_value, boundary_type in boundaries:
             point = self._intersect_with_boundary(boundary_value, boundary_type)
             if point and self.frame.contains(point[0], point[1]):
-                intersections.append(point)
+                intersections.append((round(point[0], 10), round(point[1], 10)))
                 
         return intersections
     
@@ -63,21 +63,21 @@ class Characteristic:
     
     def _intersect_vertical(self, s: float, s0: float, t0: float) -> Optional[Tuple[float, float]]:
         """Пересечение с вертикальной границей s=const"""
-        if abs(self.step) < 1e-10:
+        if abs(self.step) < EPS:
             return None
             
         k = (s - s0) / self.step
         t = t0 + k * self.dt
-        return (s, t) if self.frame.T0 <= t <= self.frame.T1 else None
+        return (s, t) if self.frame.T0-EPS <= t <= self.frame.T1+EPS else None
     
     def _intersect_horizontal(self, t: float, s0: float, t0: float) -> Optional[Tuple[float, float]]:
         """Пересечение с горизонтальной границей t=const"""
-        if abs(self.dt) < 1e-10:
+        if abs(self.dt) < EPS:
             return None
             
         k = (t - t0) / self.dt
         s = s0 + k * self.step
-        return (s, t) if self.frame.S0 <= s <= self.frame.S1 else None
+        return (s, t) if self.frame.S0-EPS <= s <= self.frame.S1+EPS else None
     
     def _set_boundary_nodes(self, intersections: List[Tuple[float, float]]):
         """Устанавливает крайние узлы на границах"""
@@ -91,14 +91,19 @@ class Characteristic:
             return
             
         s0, t0 = self.center
-        k_left = self._calculate_k(left_node, s0, t0)
-        k_right = self._calculate_k(right_node, s0, t0)
+        k_left =int(self._calculate_k(left_node, s0, t0))
+        k_right = int(self._calculate_k(right_node, s0, t0))
         
-        for k in range(int(k_left), int(k_right) + 1):
+        k_array = []
+        for k in range(k_left, k_right + 1):
             s = s0 + k * self.step
             t = t0 + k * self.dt
             if self.frame.contains(s, t):
                 self.internal_nodes[k] = (s, t)
+                k_array.append(k)
+        self.k_left = min(k_array)
+        self.k_right = max(k_array)
+
     
     def _calculate_k(self, point: Tuple[float, float], s0: float, t0: float) -> int:
         """Вычисляет индекс k для точки на характеристике"""
@@ -110,6 +115,10 @@ class Characteristic:
     
     def get_node(self, index: int) -> Optional[Tuple[float, float]]:
         """Возвращает узел по индексу"""
+        if index < self.k_left:
+            return self.boundary_nodes[0]
+        elif index > self.k_right:
+            return self.boundary_nodes[1]
         return self.internal_nodes.get(index)
     
     def get_boundary_nodes(self):

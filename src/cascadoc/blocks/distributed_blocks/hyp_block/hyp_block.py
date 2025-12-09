@@ -20,11 +20,13 @@ class HypBlock(BaseDistibutedBlock):
         # self.other_coord = other_coord
 
 
-    def add_index_val(self, index, val):
-        self.rez[index] = val
+    def add_cord_val(self, cord, val):
+        cord = (round(cord[0], 10), round(cord[1], 10))
+        self.rez[cord] = val
 
 
     def __call__(self, index = None, coord = None):
+        raise Exception("НАДО РЕАЛИЗОВАТЬ")
         if (index is None and coord is None) or (index is not None and coord is not None):
             raise Exception("НУЖНО УКАЗАТЬ ЛИБО ИНДЕКС УЗЛА, ЛИБО ЕГО КООРДИНАТУ")
         if index is not None:
@@ -39,7 +41,7 @@ class HypBlock(BaseDistibutedBlock):
                 "s": cord[0],
                 "t": cord[1],
                 "ind": ind,
-                "x": self.rez[ind] if ind in self.rez else [None, None],
+                "x": self.rez[cord] if cord in self.rez else [None, None],
                 "name_block": self.name_block
             } for ind, cord in self.mesher.nodes.items()
         ] + [
@@ -47,7 +49,7 @@ class HypBlock(BaseDistibutedBlock):
                 "s": cord[0],
                 "t": cord[1],
                 "ind": self.mesher.get_indexes(*cord),
-                "x": self.rez[self.mesher.get_indexes(*cord)] if self.mesher.get_indexes(*cord) in self.rez else [None, None],
+                "x": self.rez[cord] if cord in self.rez else [None, None],
                 "name_block": self.name_block
             } for  cord in self.mesher.get_boundary_nodes()
         ]
