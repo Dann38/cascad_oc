@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гиперболическая система — CaSCAD OC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            padding: 24px;
+        }
+        a.back { color: #0f3460; text-decoration: none; font-size: 14px; }
+        a.back:hover { text-decoration: underline; }
+        h1 { font-size: 22px; margin: 16px 0 24px; color: #16213e; }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8ecf1;
+            color: #0f3460;
+        }
+        .section h3 {
+            font-size: 15px;
+            margin: 16px 0 10px;
+            color: #333;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .config-group {
+            background: #f8f9fb;
+            border: 2px solid #e0e4ea;
+            border-radius: 8px;
+            padding: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .config-group:hover { border-color: #0f3460; }
+        .config-group legend {
+            font-weight: 600;
+            font-size: 13px;
+            color: #0f3460;
+            padding: 0 6px;
+        }
+        .config-group label {
+            display: block;
+            font-size: 12px;
+            color: #555;
+            margin-top: 8px;
+        }
+        .config-group input, .config-group select {
+            width: 100%;
+            padding: 6px 8px;
+            margin-top: 2px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+        }
+        .config-group input[type="number"] { font-family: inherit; }
+
+        .mesh-preview {
+            text-align: center;
+            margin: 16px 0;
+            border: 2px solid #e0e4ea;
+            border-radius: 8px;
+            padding: 8px;
+            background: #fafbfc;
+            cursor: pointer;
+        }
+        .mesh-preview img { max-width: 100%; max-height: 350px; }
+
+        .plot-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .plot-box {
+            border: 1px solid #e0e4ea;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            position: relative;
+        }
+        .plot-box img { max-width: 100%; max-height: 280px; }
+        .plot-box .dl-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .plot-box .dl-btn:hover { background: #e8ecf1; }
+
+        .btn {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary {
+            background: #0f3460;
+            color: white;
+        }
+        .btn-primary:hover { background: #16213e; }
+        .btn-success {
+            background: #1b8a3d;
+            color: white;
+        }
+        .btn-success:hover { background: #156b30; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .oc-config {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .oc-config label { font-size: 12px; color: #555; display: block; }
+        .oc-config input, .oc-config select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        .iter-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+        .iter-table th, .iter-table td {
+            border: 1px solid #ddd;
+            padding: 6px 10px;
+            text-align: center;
+        }
+        .iter-table th { background: #f0f2f5; font-weight: 600; }
+
+        .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid #ccc;
+            border-top-color: #0f3460;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg { color: #c0392b; font-size: 13px; margin-top: 8px; }
+        .success-msg { color: #1b8a3d; font-size: 13px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back">&larr; Выбор решателя</a>
+    <h1>Гиперболическая система</h1>
+
+    <!-- PART 1: Hyperbolic system with arbitrary control -->
+    <div class="section">
+        <h2>1. Решение гиперболической системы с произвольным управлением</h2>
+
+        <h3>Настройка системы</h3>
+        <div class="config-grid">
+            <div class="config-group" onclick="toggleConfig('bounds')">
+                <legend>Границы области</legend>
+                <label>s₀ <input type="number" id="S0" value="{{ config.S[0] }}" step="any"></label>
+                <label>s₁ <input type="number" id="S1" value="{{ config.S[1] }}" step="any"></label>
+                <label>t₀ <input type="number" id="T0" value="{{ config.T[0] }}" step="any"></label>
+                <label>t₁ <input type="number" id="T1" value="{{ config.T[1] }}" step="any"></label>
+            </div>
+            <div class="config-group" onclick="toggleConfig('coeffs')">
+                <legend>Коэффициенты наклона</legend>
+                <label>c₁ <input type="number" id="C1" value="{{ config.C[0] }}" step="any"></label>
+                <label>c₂ <input type="number" id="C2" value="{{ config.C[1] }}" step="any"></label>
+                <label>Шаг сетки m <input type="number" id="m" value="{{ config.m }}" step="1" min="4"></label>
+            </div>
+            <div class="config-group">
+                <legend>Начальные условия</legend>
+                <label>x(s, t₀) = <input type="text" id="x0" value="{{ config.x0 }}"></label>
+                <label>y(s, t₀) = <input type="text" id="y0" value="{{ config.y0 }}"></label>
+            </div>
+            <div class="config-group">
+                <legend>Граничные условия G (на s=s₀)</legend>
+                <label>G₁₁(t) = <input type="text" id="G11" value="{{ config.G11 }}"></label>
+                <label>G₁₂(t) = <input type="text" id="G12" value="{{ config.G12 }}"></label>
+                <label>G₂₁(t) = <input type="text" id="G21" value="{{ config.G21 }}"></label>
+                <label>G₂₂(t) = <input type="text" id="G22" value="{{ config.G22 }}"></label>
+            </div>
+            <div class="config-group">
+                <legend>Правые части B(s,t)</legend>
+                <label>B₁₁(s,t) = <input type="text" id="B11" value="{{ config.B11 }}"></label>
+                <label>B₁₂(s,t) = <input type="text" id="B12" value="{{ config.B12 }}"></label>
+                <label>B₂₁(s,t) = <input type="text" id="B21" value="{{ config.B21 }}"></label>
+                <label>B₂₂(s,t) = <input type="text" id="B22" value="{{ config.B22 }}"></label>
+            </div>
+            <div class="config-group">
+                <legend>Правые части F(s,t)</legend>
+                <label>F₁(s,t) = <input type="text" id="F1" value="{{ config.F1 }}"></label>
+                <label>F₂(s,t) = <input type="text" id="F2" value="{{ config.F2 }}"></label>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="applyConfig()" style="margin-top:12px">
+            Применить и построить сетку
+        </button>
+        <span id="configSpinner" class="spinner" style="display:none"></span>
+        <div id="configMsg"></div>
+
+        <div class="mesh-preview" id="meshPreview" onclick="applyConfig()">
+            <img id="meshImg" src="" alt="Нажмите «Применить» для построения сетки" style="display:none">
+            <div id="meshPlaceholder" style="padding:40px;color:#999;">
+                Нажмите «Применить и построить сетку» для визуализации характеристик
+            </div>
+        </div>
+
+        <h3>Стартовое управление</h3>
+        <div class="config-group" style="margin-bottom:12px">
+            <label>U₀(t) = <input type="text" id="U0" value="{{ config.U0 }}" style="width:100%"></label>
+        </div>
+
+        <button class="btn btn-success" onclick="solveForward()">
+            Решить прямую задачу
+        </button>
+        <span id="solveSpinner" class="spinner" style="display:none"></span>
+        <div id="solveMsg"></div>
+
+        <div class="plot-row" id="surfacePlots" style="display:none">
+            <div class="plot-box">
+                <a class="dl-btn" href="/api/download/x_surface" title="Скачать">&#x21E9;</a>
+                <img id="imgX3d" src="" alt="x surface">
+            </div>
+            <div class="plot-box">
+                <a class="dl-btn" href="/api/download/y_surface" title="Скачать">&#x21E9;</a>
+                <img id="imgY3d" src="" alt="y surface">
+            </div>
+        </div>
+    </div>
+
+    <!-- PART 2: Optimal control -->
+    <div class="section">
+        <h2>2. Решение задачи оптимального управления</h2>
+
+        <h3>Функционал и метод</h3>
+        <div class="oc-config">
+            <div>
+                <label>Функционал</label>
+                <select id="functional">
+                    <option value="quadratic">∫(x-x*)² + (y-y*)² ds</option>
+                </select>
+            </div>
+            <div>
+                <label>Метод решения</label>
+                <select id="method" onchange="toggleImpmParams()">
+                    <option value="cgm">CGM (условный градиент)</option>
+                    <option value="mpm">MPM (минимизация)</option>
+                    <option value="impm">IMPM (игольчатая линеаризация)</option>
+                </select>
+            </div>
+            <div>
+                <label>Точность ε</label>
+                <input type="number" id="eps" value="{{ config.eps }}" step="any" min="1e-10">
+            </div>
+            <div>
+                <label>u_min</label>
+                <input type="number" id="u_min" value="{{ config.u_min }}" step="any">
+            </div>
+            <div>
+                <label>u_max</label>
+                <input type="number" id="u_max" value="{{ config.u_max }}" step="any">
+            </div>
+        </div>
+
+        <div id="impmParams" style="display:none">
+            <h3>Параметры IMPM</h3>
+            <div class="oc-config">
+                <div><label>β <input type="number" id="beta" value="{{ config.beta }}" step="any"></label></div>
+                <div><label>δ <input type="number" id="delta" value="{{ config.delta }}" step="any"></label></div>
+                <div><label>eps_count_max <input type="number" id="eps_count_max" value="{{ config.eps_count_max }}" step="1"></label></div>
+            </div>
+        </div>
+
+        <h3>Целевые функции (на конечный момент)</h3>
+        <div class="config-grid" style="grid-template-columns:1fr 1fr">
+            <div class="config-group">
+                <legend>x*(s)</legend>
+                <input type="text" id="xs" value="{{ config.xs }}" style="width:100%">
+            </div>
+            <div class="config-group">
+                <legend>y*(s)</legend>
+                <input type="text" id="ys" value="{{ config.ys }}" style="width:100%">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="solveOC()" style="margin-top:12px">
+            Решить задачу оптимального управления
+        </button>
+        <span id="ocSpinner" class="spinner" style="display:none"></span>
+        <div id="ocMsg"></div>
+
+        <div id="ocResults" style="display:none; margin-top:16px">
+            <div class="plot-row" style="grid-template-columns:repeat(3,1fr)">
+                <div class="plot-box">
+                    <a class="dl-btn" href="/api/download/x_final" title="Скачать">&#x21E9;</a>
+                    <img id="imgXf" src="" alt="x final">
+                </div>
+                <div class="plot-box">
+                    <a class="dl-btn" href="/api/download/y_final" title="Скачать">&#x21E9;</a>
+                    <img id="imgYf" src="" alt="y final">
+                </div>
+                <div class="plot-box">
+                    <a class="dl-btn" href="/api/download/control" title="Скачать">&#x21E9;</a>
+                    <img id="imgU" src="" alt="control">
+                </div>
+            </div>
+
+            <h3>Таблица итераций</h3>
+            <table class="iter-table" id="iterTable">
+                <thead><tr><th>Итерация</th><th>Невязка</th></tr></thead>
+                <tbody id="iterBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function showSpinner(id) { document.getElementById(id).style.display = 'inline-block'; }
+        function hideSpinner(id) { document.getElementById(id).style.display = 'none'; }
+        function setMsg(id, text, cls) {
+            let el = document.getElementById(id);
+            el.textContent = text;
+            el.className = cls || '';
+        }
+
+        function collectConfig() {
+            return {
+                S: [parseFloat(document.getElementById('S0').value), parseFloat(document.getElementById('S1').value)],
+                T: [parseFloat(document.getElementById('T0').value), parseFloat(document.getElementById('T1').value)],
+                C: [parseFloat(document.getElementById('C1').value), parseFloat(document.getElementById('C2').value)],
+                m: parseInt(document.getElementById('m').value),
+                B11: document.getElementById('B11').value,
+                B12: document.getElementById('B12').value,
+                B21: document.getElementById('B21').value,
+                B22: document.getElementById('B22').value,
+                F1: document.getElementById('F1').value,
+                F2: document.getElementById('F2').value,
+                G11: document.getElementById('G11').value,
+                G12: document.getElementById('G12').value,
+                G21: document.getElementById('G21').value,
+                G22: document.getElementById('G22').value,
+                x0: document.getElementById('x0').value,
+                y0: document.getElementById('y0').value,
+                phi_dx: '{{ config.phi_dx }}',
+                phi_dy: '{{ config.phi_dy }}',
+                U0: document.getElementById('U0').value,
+                xs: document.getElementById('xs').value,
+                ys: document.getElementById('ys').value,
+                u_min: parseFloat(document.getElementById('u_min').value),
+                u_max: parseFloat(document.getElementById('u_max').value),
+                eps: parseFloat(document.getElementById('eps').value),
+                method: document.getElementById('method').value,
+                beta: parseFloat(document.getElementById('beta')?.value || 0),
+                delta: parseFloat(document.getElementById('delta')?.value || 1),
+                eps_count_max: parseInt(document.getElementById('eps_count_max')?.value || 6),
+                functional: document.getElementById('functional').value
+            };
+        }
+
+        async function applyConfig() {
+            showSpinner('configSpinner');
+            setMsg('configMsg', '', '');
+            try {
+                let resp = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(collectConfig())
+                });
+                let data = await resp.json();
+                if (data.status === 'ok') {
+                    let img = document.getElementById('meshImg');
+                    img.src = 'data:image/png;base64,' + data.mesh_img;
+                    img.style.display = 'block';
+                    document.getElementById('meshPlaceholder').style.display = 'none';
+                    setMsg('configMsg', 'Сетка построена', 'success-msg');
+                } else {
+                    setMsg('configMsg', 'Ошибка: ' + data.message, 'error-msg');
+                }
+            } catch(e) {
+                setMsg('configMsg', 'Ошибка соединения: ' + e.message, 'error-msg');
+            }
+            hideSpinner('configSpinner');
+        }
+
+        async function solveForward() {
+            showSpinner('solveSpinner');
+            setMsg('solveMsg', '', '');
+            try {
+                // ensure config is up to date
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(collectConfig())
+                });
+                let resp = await fetch('/api/solve_forward', {method:'POST'});
+                let data = await resp.json();
+                if (data.status === 'ok') {
+                    document.getElementById('imgX3d').src = 'data:image/png;base64,' + data.img_x;
+                    document.getElementById('imgY3d').src = 'data:image/png;base64,' + data.img_y;
+                    document.getElementById('surfacePlots').style.display = 'grid';
+                    setMsg('solveMsg', 'Прямая задача решена', 'success-msg');
+                } else {
+                    setMsg('solveMsg', 'Ошибка: ' + data.message, 'error-msg');
+                }
+            } catch(e) {
+                setMsg('solveMsg', 'Ошибка соединения: ' + e.message, 'error-msg');
+            }
+            hideSpinner('solveSpinner');
+        }
+
+        async function solveOC() {
+            showSpinner('ocSpinner');
+            setMsg('ocMsg', '', '');
+            try {
+                let cfg = collectConfig();
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(cfg)
+                });
+                let resp = await fetch('/api/solve_oc', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(cfg)
+                });
+                let data = await resp.json();
+                if (data.status === 'ok') {
+                    document.getElementById('imgXf').src = 'data:image/png;base64,' + data.img_xf;
+                    document.getElementById('imgYf').src = 'data:image/png;base64,' + data.img_yf;
+                    document.getElementById('imgU').src = 'data:image/png;base64,' + data.img_u;
+                    let tbody = document.getElementById('iterBody');
+                    tbody.innerHTML = '';
+                    for (let row of data.iterations) {
+                        tbody.innerHTML += '<tr><td>' + row.iteration + '</td><td>' + row.residual + '</td></tr>';
+                    }
+                    document.getElementById('ocResults').style.display = 'block';
+                    setMsg('ocMsg', 'Задача оптимального управления решена', 'success-msg');
+                } else {
+                    setMsg('ocMsg', 'Ошибка: ' + data.message, 'error-msg');
+                }
+            } catch(e) {
+                setMsg('ocMsg', 'Ошибка соединения: ' + e.message, 'error-msg');
+            }
+            hideSpinner('ocSpinner');
+        }
+
+        function toggleImpmParams() {
+            document.getElementById('impmParams').style.display =
+                document.getElementById('method').value === 'impm' ? 'block' : 'none';
+        }
+        toggleImpmParams();
+    </script>
+</body>
+</html>
