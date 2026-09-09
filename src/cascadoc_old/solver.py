@@ -25,8 +25,8 @@ class Solver:
             x = mesh.rez_nodes_final_r[node_index][0][0]
             y = mesh.rez_nodes_final_r[node_index][0][1]
 
-            mesh.rez_nodes_final_r[node_index][1][0]=-problem.phi_dx(s, x, y)
-            mesh.rez_nodes_final_r[node_index][1][1]=-problem.phi_dy(s, x, y)
+            mesh.rez_nodes_final_r[node_index][1][0]=problem.phi_dx(s, x, y)
+            mesh.rez_nodes_final_r[node_index][1][1]=problem.phi_dy(s, x, y)
             if s==problem.S0:
                 mesh.rez_nodes_final_r[node_index][1][2]=0
             elif s==problem.S1:
@@ -39,8 +39,8 @@ class Solver:
             y = mesh.rez_nodes_final_l[node_index][0][1]
 
 
-            mesh.rez_nodes_final_l[node_index][1][0]=-problem.phi_dx(s, x, y) 
-            mesh.rez_nodes_final_l[node_index][1][1]=-problem.phi_dy(s, x, y)
+            mesh.rez_nodes_final_l[node_index][1][0]=problem.phi_dx(s, x, y) 
+            mesh.rez_nodes_final_l[node_index][1][1]=problem.phi_dy(s, x, y)
             if s==problem.S0:
                 mesh.rez_nodes_final_l[node_index][1][2]=0
             elif s==problem.S1:
@@ -327,9 +327,9 @@ class Solver:
         C2 = problem.C2
         psi_to_P = 1/problem.C1*G22(t)
 
-        A = [[1 - hl/2*G22(t), hl/2*C2],
+        A = [[1 + hl/2*G22(t), hl/2*C2],
              [hr/2*B12(s, t)*psi_to_P, 1+hr/2*B22(s, t)]]
-        b = [p2l +   hl/2*(G22(tl)*p2l-C2*psi2l),
+        b = [p2l +   hl/2*(-G22(tl)*p2l-C2*psi2l),
              psi2r + hr/2*(-B12(sr, tr)*psi1r-B22(sr, tr)*psi2r)]
         p2, psi2 = np.linalg.solve(A, b)
         psi1 = psi_to_P*p2
@@ -365,9 +365,9 @@ class Solver:
         psi_to_P = 1/problem.C2*G11(t)
 
         A = [[1 + hl/2*B11(s, t), hl/2*B21(s, t)*psi_to_P],
-             [hr/2*C1, 1-hr/2*G11(t)]]
+             [hr/2*C1, 1+hr/2*G11(t)]]
         b = [psi1l + hl/2*(-B11(sl, tl)*psi1l-B21(sl, tl)*psi2l),
-             p1r+hr/2*(G11(tr)*p1r-C1*psi1r)]
+             p1r+hr/2*(-G11(tr)*p1r-C1*psi1r)]
         psi1, p1 = np.linalg.solve(A, b)
         psi2 = psi_to_P*p1
         

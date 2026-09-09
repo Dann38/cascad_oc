@@ -7,7 +7,7 @@ from .solver import Solver
 from typing import List, Callable
 
 MAX_STEP_ALPHA = 20
-MAX_ITERATION = 20
+MAX_ITERATION = 100
 
 class OCProblem:
     def __init__(self, hyp_problem: HypProblem, mesh: Mesh, xs, ys) -> None:
@@ -58,6 +58,9 @@ class OCProblem:
         y_final = [node[1][0][1] for i, node in enumerate(nodes) if i in self.t_index]
 
         f = [(xi-self.xs(si))**2+(yi-self.ys(si))**2 for xi, yi, si in zip(x_final, y_final, s_final)]
+        # for fi in f:
+        #     print(f'{fi:.2f} ', end='')
+        # print()
         return scipy.integrate.trapezoid(f, s_final)
 
     def set_ulim(self, u_lim):
@@ -69,7 +72,7 @@ class OCProblem:
 
     def set_new_control(self, U):
         G22_0 = lambda t: U(t)
-        G21_0 = lambda t: - G22_0(t)
+        G21_0 = lambda t: G22_0(t)
         G11_0 = self.hyp_problem.G11
         G12_0 = self.hyp_problem.G12
         self.hyp_problem.set_G([[G11_0, G12_0], [G21_0, G22_0]])
@@ -127,6 +130,7 @@ def cgm_solver(oc_problem, debug, **params):
 
         oc_problem.rezid.append(Theta_uk)
         if debug:
+            print(40*"*"+f'[{k} iter]') 
             print("Оптимально" if Theta_uk <= oc_problem.min_delta else "Не оптимально")
             print(f"Невязка составляет: {Theta_uk:.6f}")
             print(40*"*")  
@@ -141,6 +145,7 @@ def cgm_solver(oc_problem, debug, **params):
         oc_problem.set_new_control(lambda ti: np.interp(ti, t, uk_a_min))
         if debug:
             print("результат минимизации a = ", a)
+        # ALPHA_HYSTORY = 0
     return oc_problem
 
 
@@ -187,7 +192,7 @@ def impm_solver(oc_problem, debug, **params):
     return oc_problem
 
 def _get_over(nodes, uk, t, u_min, u_max):
-    hu = [node[1][1][2]*(node[1][0][0]-node[1][0][1]) for node in nodes]
+    hu = [node[1][1][2]*(node[1][0][0]+node[1][0][1]) for node in nodes]
     new_uk = []
     for uki, hui in zip(uk, hu):
         if hui == 0:
@@ -255,7 +260,7 @@ def _get_uki_variation(uk, over_uk, T, param):
         uk_new[ind_l:ind_r] = uk_new[ind_l:ind_r] + param[1]*(over_uk[ind_l:ind_r]-uk_new[ind_l:ind_r])
     return uk_new
 
-def _alpha_test(oc_problem:OCProblem, uk, uk_new, const=10):
+def _alpha_test(oc_problem:OCProblem, uk, uk_new, const=1):
     nodes = oc_problem.mesh.get_border(type_border="left", sort_t=True)
     t_mesh = [node[0][3] for node in nodes]
     global ALPHA_HYSTORY
@@ -266,7 +271,7 @@ def _alpha_test(oc_problem:OCProblem, uk, uk_new, const=10):
     is_run_2 = False
     J_old = oc_problem.J(uk)
     a = const/(const+ALPHA_HYSTORY)
-    max_a = ALPHA_HYSTORY + MAX_STEP_ALPHA
+    max_a = ALPHA_HYSTORY//2 + MAX_STEP_ALPHA
     while is_run:
         J_new = fun(a)
         if is_run_2 and J_old < J_new:
