@@ -20,6 +20,21 @@ class Block(ABC):
     def __init__(self, name: str, system: System) -> None:
         self.name = name
         self.system = system
+        self._depends_on: List[str] = []
+
+    @property
+    def depends_on(self) -> List[str]:
+        """Имена блоков, которые должны быть решены раньше этого блока."""
+        return list(self._depends_on)
+
+    @depends_on.setter
+    def depends_on(self, deps: List[str]) -> None:
+        self._depends_on = list(deps)
+
+    @property
+    def provides(self) -> str:
+        """Имя переменной, которую производит этот блок (или '')."""
+        return ''
 
     @abstractmethod
     def layer_times(self) -> List[float]:

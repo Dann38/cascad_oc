@@ -12,24 +12,27 @@
 Публичный API остаётся плоским: всё перечисленное доступно прямо из
 ``cascadoc_new``.
 """
-from .core import Point, Variable, AnalyticVariable, NumericVariable, normalize_float, PRECISION
+from .core import (Point, Variable, AnalyticVariable, NumericVariable,
+                    DeferredVariable, normalize_float, PRECISION)
 from .system import Node, System, Block
 from .mesh import CharacteristicMesh
 from .solvers import Solver, TrapezoidalSolver
 from .blocks import (boundary_ode_step, boundary_plain_step,
-                     HypBlock, ODEBlock, PlainBoundaryBlock)
+                     HypBlock, ODEBlock, PlainBoundaryBlock,
+                     ODESourceBlock, DeferredBoundaryBlock)
 from .problem import build_hyp_system, build_hyp_blocks
 from .viz import Plotter, plot_mesh, plot_field, plot_slice, plot_surface
 
 __all__ = [
     'Point',
-    'Variable', 'AnalyticVariable', 'NumericVariable',
+    'Variable', 'AnalyticVariable', 'NumericVariable', 'DeferredVariable',
     'Node',
     'System',
     'Block',
     'CharacteristicMesh',
     'Solver', 'TrapezoidalSolver',
     'HypBlock', 'ODEBlock', 'PlainBoundaryBlock',
+    'ODESourceBlock', 'DeferredBoundaryBlock',
     'boundary_ode_step', 'boundary_plain_step',
     'build_hyp_system', 'build_hyp_blocks',
     'Plotter', 'plot_mesh', 'plot_field', 'plot_slice', 'plot_surface',

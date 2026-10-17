@@ -69,9 +69,52 @@ class NumericVariable(Variable):
         return self._data
 
 
+class DeferredVariable(Variable):
+    """Отложенная переменная: значение берётся из источника во время решения.
+
+    Объявляется по имени и размерности, но без формулы. При запросе ``at(point)``
+    читает значение из ``source`` — ``NumericVariable``, которая заполняется
+    блоком-производителем в ходе ``System.solve()``.
+
+    Потребитель (например ``HypBlock`` или ``DeferredBoundaryBlock``) получает
+    значение лениво, на том слое ``t``, где оно уже посчитано.
+    """
+
+    def __init__(self, name: str, source_name: str, dim: int = 1):
+        super().__init__(name, dim)
+        self.source_name = source_name
+        self._system = None
+
+    def bind(self, system) -> None:
+        self._system = system
+
+    def at(self, point: Point) -> Optional[Union[float, np.ndarray]]:
+        if self._system is None:
+            raise RuntimeError(
+                f"DeferredVariable '{self.name}' not bound to a System")
+        source = self._system.variables.get(self.source_name)
+        if source is None:
+            raise RuntimeError(
+                f"DeferredVariable '{self.name}': source "
+                f"'{self.source_name}' not found")
+        val = source.at(point)
+        if val is None:
+            raise RuntimeError(
+                f"DeferredVariable '{self.name}': source "
+                f"'{self.source_name}' has no value at {point}. "
+                f"Producer block may not have run yet "
+                f"(check block dependencies).")
+        return val
+
+
 def is_analytic(var: Variable) -> bool:
     return isinstance(var, AnalyticVariable)
 
 
 def is_numeric(var: Variable) -> bool:
     return isinstance(var, NumericVariable)
+
+
+
+def is_deferred(var: Variable) -> bool:
+    return isinstance(var, DeferredVariable)
