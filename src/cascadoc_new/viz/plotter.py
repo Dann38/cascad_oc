@@ -44,6 +44,7 @@ from ..core.utils import PRECISION
 Expr = Union[str, Tuple[str, int], Callable, float, int]
 
 _GROUPS = ('center', 'start_l', 'start_r', 'final_l', 'final_r')
+_COORD_IDX = {'s': 0, 't': 1}
 
 
 class Plotter:
@@ -81,7 +82,7 @@ class Plotter:
             seen: Dict[Tuple[float, float], object] = {}
             for group in _GROUPS:
                 for node in getattr(self.mesh, 'nodes_' + group):
-                    key = (round(node.s, PRECISION), round(node.t, PRECISION))
+                    key = (round(node.point[0], PRECISION), round(node.point[1], PRECISION))
                     seen.setdefault(key, node)
             self._nodes_cache = list(seen.values())
         return self._nodes_cache
@@ -116,7 +117,7 @@ class Plotter:
 
         if callable(expr):
             if self._num_params(expr) >= 2:
-                get = lambda node, _f=expr: float(_f(node.s, node.t))
+                get = lambda node, _f=expr: float(_f(node.point[0], node.point[1]))
             else:
                 get = lambda node, _f=expr: float(_f(node.point))
             return get, getattr(expr, '__name__', 'fn'), False
@@ -134,7 +135,7 @@ class Plotter:
         """Ближайший к ``value`` уровень координаты ``coord`` среди узлов сетки."""
         levels: Dict[float, float] = {}
         for node in self._all_nodes():
-            levels.setdefault(round(getattr(node, coord), PRECISION), getattr(node, coord))
+            levels.setdefault(round(node.point[_COORD_IDX[coord]], PRECISION), node.point[_COORD_IDX[coord]])
         keys = np.array(list(levels.keys()))
         key = float(keys[int(np.argmin(np.abs(keys - value)))])
         return key, levels[key]
@@ -162,20 +163,20 @@ class Plotter:
             node = mesh.center[(i, j)]
             if mesh.is_from_center(i, j - 1):
                 other = mesh.center[(i, j - 1)]
-                segments.append([(node.s, node.t), (other.s, other.t)])
+                segments.append([(node.point[0], node.point[1]), (other.point[0], other.point[1])])
             if mesh.is_from_center(i + 1, j):
                 other = mesh.center[(i + 1, j)]
-                segments.append([(node.s, node.t), (other.s, other.t)])
-            center_s.append(node.s)
-            center_t.append(node.t)
+                segments.append([(node.point[0], node.point[1]), (other.point[0], other.point[1])])
+            center_s.append(node.point[0])
+            center_t.append(node.point[1])
 
         for group in ('final_l', 'final_r', 'start_l', 'start_r'):
             for i, j in getattr(mesh, 'order_' + group):
                 node = getattr(mesh, group)[(i, j)]
                 center = mesh.get_center_node(i, j)
-                segments.append([(node.s, node.t), (center.s, center.t)])
-                boundary_s.append(node.s)
-                boundary_t.append(node.t)
+                segments.append([(node.point[0], node.point[1]), (center.point[0], center.point[1])])
+                boundary_s.append(node.point[0])
+                boundary_t.append(node.point[1])
 
         ax.add_collection(LineCollection(segments, colors=edge_color))
         ax.scatter(center_s, center_t, color=node_color)
@@ -209,8 +210,8 @@ class Plotter:
         else:
             nodes = self._all_nodes()
 
-        s = np.array([n.s for n in nodes], dtype=float)
-        t = np.array([n.t for n in nodes], dtype=float)
+        s = np.array([n.point[0] for n in nodes], dtype=float)
+        t = np.array([n.point[1] for n in nodes], dtype=float)
         v = np.array([getter(n) for n in nodes], dtype=float)
 
         good = np.isfinite(v)
@@ -267,8 +268,8 @@ class Plotter:
             _, ax = plt.subplots(figsize=figsize)
 
         slice_nodes = [n for n in self._all_nodes()
-                       if round(getattr(n, fixed), PRECISION) == key]
-        slice_nodes.sort(key=lambda n: getattr(n, free))
+                       if round(n.point[_COORD_IDX[fixed]], PRECISION) == key]
+        slice_nodes.sort(key=lambda n: n.point[_COORD_IDX[free]])
 
         lo, hi = x_range if x_range is not None else self._free_range(free)
         dense = np.linspace(lo, hi, samples)
@@ -280,7 +281,7 @@ class Plotter:
             style = styles[k] if styles is not None else None
 
             if is_numeric:
-                xs = np.array([getattr(n, free) for n in slice_nodes])
+                xs = np.array([n.point[_COORD_IDX[free]] for n in slice_nodes])
                 ys = np.array([getter(n) for n in slice_nodes])
                 ax.plot(xs, ys, style or 'o-', label=label, **kwargs)
             else:
@@ -310,8 +311,8 @@ class Plotter:
         else:
             nodes = self._all_nodes()
 
-        s = np.array([n.s for n in nodes], dtype=float)
-        t = np.array([n.t for n in nodes], dtype=float)
+        s = np.array([n.point[0] for n in nodes], dtype=float)
+        t = np.array([n.point[1] for n in nodes], dtype=float)
         v = np.array([getter(n) for n in nodes], dtype=float)
         good = np.isfinite(v)
         s, t, v = s[good], t[good], v[good]

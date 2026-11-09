@@ -45,8 +45,8 @@ def boundary_ode_step(
     ``char_*`` — приходящая характеристика (шаг ДУЧП).
     """
     if side == 'left':
-        dt_ode = point.t - prev_point.t
-        dt_char = point.t - char_point.t
+        dt_ode = point[1] - prev_point[1]
+        dt_char = point[1] - char_point[1]
 
         B11, B12 = _coef(system, 'B11', point), _coef(system, 'B12', point)
         B11c, B12c = _coef(system, 'B11', char_point), _coef(system, 'B12', char_point)
@@ -63,8 +63,8 @@ def boundary_ode_step(
         return np.linalg.solve(A, b)
 
     if side == 'right':
-        dt_char = point.t - char_point.t
-        dt_ode = point.t - prev_point.t
+        dt_char = point[1] - char_point[1]
+        dt_ode = point[1] - prev_point[1]
 
         B21, B22 = _coef(system, 'B21', point), _coef(system, 'B22', point)
         B21c, B22c = _coef(system, 'B21', char_point), _coef(system, 'B22', char_point)
@@ -99,7 +99,7 @@ def boundary_plain_step(
     считается из приходящей характеристики.
     """
     if side == 'left':
-        dt_char = point.t - char_point.t
+        dt_char = point[1] - char_point[1]
         B11, B12 = _coef(system, 'B11', point), _coef(system, 'B12', point)
         B11c, B12c = _coef(system, 'B11', char_point), _coef(system, 'B12', char_point)
         F1, F1c = _coef(system, 'F1', point), _coef(system, 'F1', char_point)
@@ -111,7 +111,7 @@ def boundary_plain_step(
         return np.array([x, value])
 
     if side == 'right':
-        dt_char = point.t - char_point.t
+        dt_char = point[1] - char_point[1]
         B21, B22 = _coef(system, 'B21', point), _coef(system, 'B22', point)
         B21c, B22c = _coef(system, 'B21', char_point), _coef(system, 'B22', char_point)
         F2, F2c = _coef(system, 'F2', point), _coef(system, 'F2', char_point)

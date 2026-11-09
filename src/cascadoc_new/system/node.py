@@ -22,23 +22,18 @@ class Node:
 
     __slots__ = ('point', '_system')
 
-    def __init__(self, point: Union[Point, float], system: Optional[System] = None,
-                 t: Optional[float] = None):
-        if isinstance(point, Point):
-            self.point = point
-        elif t is not None:
-            self.point = Point(point, t)  # совместимость: Node(s, t)
-        else:
-            self.point = Point(point)
+    def __init__(self, point: Point, system: Optional['System'] = None):
+        self.point = point
         self._system = system
 
+    #: Имена координат для двумерных задач (обратная совместимость).
     @property
     def s(self) -> float:
-        return self.point.s
+        return self.point[0]
 
     @property
     def t(self) -> float:
-        return self.point.t
+        return self.point[1]
 
     def __getitem__(self, name: str) -> Optional[Union[float, np.ndarray]]:
         if self._system is None:

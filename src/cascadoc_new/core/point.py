@@ -10,10 +10,10 @@ class Point:
     Хранит кортеж координат и служит единым аргументом вместо списка
     отдельных чисел. Точки можно конкатенировать оператором ``|``:
 
-        Point(s, t) | Point(s2, t2)        -> Point(s, t, s2, t2)
-        Point(i, j) | Point(s, t)          -> Point(i, j, s, t)
+        Point(1, 2) | Point(3, 4)   -> Point(1, 2, 3, 4)
+        Point(a, b) | Point(c, d)   -> Point(a, b, c, d)
 
-    Для координат (s, t) доступны свойства ``s`` и ``t``.
+    Доступ к координатам — по индексу: ``point[0]``, ``point[1]``.
     """
 
     __slots__ = ('_coords',)
@@ -53,10 +53,8 @@ class Point:
     def coords(self) -> Tuple:
         return self._coords
 
-    @property
-    def dim(self) -> int:
-        return len(self._coords)
-
+    #: Удобные имена первых двух координат (s, t) для двумерных задач.
+    #: Сохранены для обратной совместимости со старым кодом/тестами.
     @property
     def s(self) -> float:
         return self._coords[0]
@@ -64,6 +62,10 @@ class Point:
     @property
     def t(self) -> float:
         return self._coords[1]
+
+    @property
+    def dim(self) -> int:
+        return len(self._coords)
 
     def asarray(self) -> np.ndarray:
         return np.asarray(self._coords, dtype=float)

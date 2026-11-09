@@ -32,7 +32,7 @@ class HypBlock(Block):
     # ------------------------------------------------------------------ слои
     def layer_times(self) -> List[float]:
         times = {self.mesh.T0, self.mesh.T1}
-        times.update(node.t for node in self.mesh.nodes_center)
+        times.update(node.point[1] for node in self.mesh.nodes_center)
         return sorted(times)
 
     def solve_layer(self, t: float) -> None:
@@ -58,9 +58,9 @@ class HypBlock(Block):
         mesh, S0, S1 = self.mesh, self.mesh.S0, self.mesh.S1
         for i, j in mesh.order_center:
             node = mesh.center[(i, j)]
-            if node.t != t:
+            if node.point[1] != t:
                 continue
-            s = node.s
+            s = node.point[0]
             if s == S0 or s == S1:
                 continue
             left = mesh.get_center_node_left(i, j)

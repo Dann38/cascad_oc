@@ -36,16 +36,16 @@ class DeferredBoundaryBlock(Block):
 
     def _boundary_nodes(self):
         return [node for node in self.mesh.nodes_center
-                if node.s == self.s_const]
+                if node.point[0] == self.s_const]
 
     def layer_times(self) -> List[float]:
-        return sorted({node.t for node in self._boundary_nodes()})
+        return sorted({node.point[1] for node in self._boundary_nodes()})
 
     def solve_layer(self, t: float) -> None:
         mesh = self.mesh
         for i, j in mesh.order_center:
             node = mesh.center[(i, j)]
-            if node.t != t or node.s != self.s_const:
+            if node.point[1] != t or node.point[0] != self.s_const:
                 continue
 
             val = node[self.deferred_var]

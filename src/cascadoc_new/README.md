@@ -5,8 +5,9 @@
 Решение каскадных систем ДУЧП + ОДУ для задач оптимального управления.
 
 В центре архитектуры — **точки** (`Point`) и **именованные переменные** (`Variable`),
-определённые на точках (s,t) сетки. Переменная может быть аналитической
-(вычисляется на лету) или численной (хранит значения).
+определённые на точках сетки. Переменная может быть аналитической
+(вычисляется на лету), численной (хранит значения) или ссылочной
+(берётся из другой переменной, resolved во время решения).
 
 ## Точка `Point`
 
@@ -15,11 +16,10 @@
 
 ```python
 Point(0, 1) | Point(2, 3)      # → Point(0, 1, 2, 3)
-Point(i, j) | Point(s, t)      # → Point(i, j, s, t)
 Point(1) | Point(2) | Point(3) # → Point(1, 2, 3)
 ```
 
-Для координат (s,t) доступны `point.s` и `point.t`.
+Координаты доступны по индексу: `point[0]`, `point[1]`.
 
 ## Основные типы
 
@@ -27,18 +27,23 @@ Point(1) | Point(2) | Point(3) # → Point(1, 2, 3)
 
 ```python
 # Аналитическая: f(point) — не хранит данные, считает при каждом запросе
-var = AnalyticVariable('B11', lambda point: -2 * point.s, dim=1)
+var = AnalyticVariable('B11', lambda point: -2 * point[0], dim=1)
 
 # Численная: хранит np.ndarray(dim,) в каждой точке
 var = NumericVariable('X', dim=2)
 var.store(Point(s, t), np.array([x, y]))
 val = var.at(Point(s, t))  # → np.ndarray(2,)
+
+# Ссылочная: значение берётся из другой переменной во время решения
+var = DeferredVariable('Z', source='Z_numeric')
 ```
 
 Аналитические — для коэффициентов (B, F, G, C, ...).  
-Численные — для состояния и сопряжённых переменных (X, PSI, p).
+Численные — для состояния и сопряжённых переменных (X, PSI, p).  
+Ссылочные (`DeferredVariable`) — для переменных, которые заполняются
+блоком-производителем в ходе ``System.solve()``.
 
-### `Node` — точка с lazy-доступом к переменным
+### `Node` — точка с ленивым доступом к переменным
 
 ```python
 n = sys.node(Point(s, t))
@@ -47,32 +52,32 @@ n['X']       # → np.ndarray(dim,)  — чтение/вычисление
 n['B11']     # → float             — аналитика на лету
 n['X'] = [x, y]  # запись (только numeric)
 n['X'][0]    # → float — компонента
-n.s, n.t     # координаты точки
 n.is_computed('X')  # проверка
 ```
 
 Node **не хранит данные** — только `Point` и ссылку на System. Чтение/запись идут
-в реестр переменных System. Каждая точка `(s,t)` в системе ровно одна: совпадающие
-по координате узлы роли — это один и тот же узел.
+в реестр переменных System. Каждая точка в системе ровно одна: совпадающие
+по координате узлы — это один и тот же узел.
 
 ### `System` — реестр переменных
 
 ```python
 sys = System()
-sys.var_analytic('B11', lambda point: -2 * point.s, dim=1)  # коэффициент
+sys.var_analytic('B11', lambda point: -2 * point[0], dim=1)  # коэффициент
 sys.var_analytic('C1', 1)              # константа: число вместо функции
 sys.var_const('C2', 2)                 # то же самое, сахар
 sys.var_callable('phi_dx', fn)         # функция, зависящая от состояния
 sys.var_numeric('X', dim=2)            # вектор состояния
 sys.var_numeric('PSI', dim=2)          # сопряжённый вектор
-sys.var_numeric('p', dim=1)            # adjoint proxy
+sys.var_numeric('p', dim=1)            # сопряжённая переменная (скаляр)
+sys.var_deferred('Z', source='Z_num')  # ссылочная переменная
 
 n = sys.node(Point(s, t))              # узел с привязкой
 ```
 
 Размерность переменной (dim) — число компонент. Для ДУЧП 2×2 dim=2, для ОДУ dim=1, для 3D систем — число уравнений.
 
-## Сетка и решатель
+## Сетка
 
 ### `CharacteristicMesh` — сетка для гиперболических систем
 
@@ -90,64 +95,25 @@ mesh.is_from_center(i, j)           # внутри области
 
 Сетка **не хранит решения** — только узлы-точки. Значения живут в System.
 
-### `TrapezoidalSolver` — схема трапеций (Crank–Nicolson)
-
-Решатели называются по схеме дискретизации; базовый интерфейс — `Solver`
-(`solve_forward` / `solve_adjoint`). Функции шага схемы принимают координаты
-как `Point`:
-
-```python
-solver = TrapezoidalSolver(sys)
-solver.solve_forward(mesh)   # считает X
-solver.solve_adjoint(mesh)   # считает PSI и p (использует X)
-
-# шаг схемы принимает точки, а не список чисел:
-# center_solve(point, point_l, point_r, st_l, st_r)
-```
-
-## Порядок вычислений
-
-Прямой ход (от T0 к T1) → сопряжённый ход (от T1 к T0).
-
-```python
-solver.solve_forward(mesh)   # X записан в sys.variables['X']
-solver.solve_adjoint(mesh)   # PSI записан в sys.variables['PSI']
-```
-
-## Сборка задачи
-
-```python
-from cascadoc_new import build_hyp_system
-
-sys, mesh, solver = build_hyp_system(
-    S=(0, 1), T=(0, 0.5), C=(1, 2),
-    B=(B11, B12, B21, B22), F=(F1, F2), G=((G11, G12), (G21, G22)),
-    x0=x0, y0=y0, phi_dx=phi_dx, phi_dy=phi_dy,
-    m=100,
-)
-solver.solve_forward(mesh)
-solver.solve_adjoint(mesh)
-```
-
-Здесь `B, F` задаются как `f(s, t)`, `G` как `g(t)`, `x0/y0` как `f(s)`,
-`phi_dx/phi_dy` как `f(s, x, y)`; внутри они оборачиваются в функции от `Point`.
-
-## Композиция блоков: границы как ОДУ
+## Композиция блоков
 
 Гиперболическая задача собирается как **композиция блоков** (`System.blocks`),
-а не как один монолитный решатель. Блок — это единица системы, которая решает
-свою часть узлов послойно по времени `t`:
+а не монолитный решатель. Блок — единица системы, решающая свою часть узлов
+послойно по времени:
 
-* `HypBlock` — внутренность `S0 < s < S1`, начальный (`t = T0`) и выходной
-  (`t = T1`) слои. Про границы `s = S0/S1` блок ничего не знает;
-* `ODEBlock` — граница `s = const`, заданная **ОДУ** (коэффициенты `G`),
+* `HypBlock` — внутренность `S0 < s < S1`, начальный и выходной слои;
+* `ODEBlock` — граница `s = const`, заданная **ОДУ** с коэффициентами `G`,
   сцепленным с приходящей характеристикой из `HypBlock`;
-* `PlainBoundaryBlock` — та же роль границы, но значение задано **напрямую**
-  функцией времени (промежуточный, самый простой случай).
+* `PlainBoundaryBlock` — граница, значение на которой задано **напрямую**
+  функцией времени;
+* `ODESourceBlock` — решает ОДУ на границе и пишет результат в численную
+  переменную (источник для отложенных переменных);
+* `DeferredBoundaryBlock` — граничный блок, читающий значение из отложенной
+  переменной (`DeferredVariable`).
 
 Блоки не хранят значения: «интерфейс» между ними — общее хранилище
-`NumericVariable`. Узел `Point(s, t)` один и тот же для `HypBlock` и
-`ODEBlock`, поэтому обмен идёт без отдельных объектов-связок.
+`NumericVariable`. Узел `Point(s, t)` один и тот же для всех блоков,
+поэтому обмен идёт без отдельных объектов-связок.
 
 ```python
 from cascadoc_new import build_hyp_blocks
@@ -159,28 +125,23 @@ sys, mesh, hyp = build_hyp_blocks(
     m=100,
     boundaries='ode',          # или 'plain' с bc_left/bc_right
 )
-sys.solve()                    # послойно по t: HypBlock + два ODEBlock
+sys.solve()                    # послойно по t
 ```
 
-### Промежуточная логика границ (3 шага)
+### Режимы границ
 
-1. **Граница просто задана** — `PlainBoundaryBlock`: недостающая компонента
+1. **`boundaries='plain'`** — `PlainBoundaryBlock`: недостающая компонента
    известна как `value_fn(t)`, вторая досчитывается по характеристике
    (`boundary_plain_step`).
-2. **Граница как ОДУ** — `ODEBlock`: компонента на границе живёт во времени
+2. **`boundaries='ode'`** — `ODEBlock`: компонента на границе живёт во времени
    (`dy/dt = G21·x + G22·y` слева, `dx/dt = G11·x + G12·y` справа) и
    алгебраически сцеплена с ДУЧП (`boundary_ode_step`).
-3. **Одна переиспользуемая логика** — шаг граничного ОДУ вынесен в одну
-   функцию `boundary_ode_step(system, point, prev, char, side)`; левая и правая
-   границы — это один и тот же шаг с переставленными ролями компонент.
+3. **Отложенная переменная** — `ODESourceBlock` + `DeferredBoundaryBlock`:
+   граничное значение вычисляется в ходе решения, а не задаётся извне.
 
-Порядок решения задаёт `System.solve()`: слои по возрастанию `t`, на каждом
-слое блоки независимы (зависимости лежат на более ранних слоях). Сборка
-выходной границы `t = T1` выполняется пост-шагом `Block.finalize` — после того,
-как граничные блоки закончили слой `T1`.
-
-`HypBlock` + `ODEBlock` дают результат, побитово совпадающий с
-`TrapezoidalSolver`, но граничное ОДУ больше не «зашито» в решатель.
+Порядок решения задаёт `System.solve()`: блоки сортируются топологически,
+слои обрабатываются по возрастанию `t`. Зависимости между блоками
+описываются полем `depends_on`.
 
 ## Визуализация
 
@@ -196,7 +157,7 @@ viz.plot_mesh()                        # геометрия сетки
 
 # любая функция на (s, t): имя переменной, компонента, callable или число
 viz.plot_field('X', component=0)       # псевдоцветное поле
-viz.plot_field(lambda s, t: s * t)     # произвольная функция
+viz.plot_field(lambda point: point[0] * point[1])  # произвольная функция
 
 # разрез при фиксированном s или t; сразу несколько функций на графике
 viz.plot_slice([('X', 0), ('X', 1), x_an], t=mesh.T1,
@@ -210,7 +171,7 @@ viz.plot_surface('X', component=0)     # 3D поверхность z = f(s, t)
 
 | Запись | Значение |
 |--------|----------|
-| `'X'` | имя переменной System (численной или аналитической) |
+| `'X'` | имя переменной System (численной, аналитической или ссылочной) |
 | `('X', 1)` | компонента векторной переменной |
 | `lambda point: ...` | `f(Point) -> float` |
 | `lambda s, t: ...` | `f(s, t) -> float` |
@@ -232,7 +193,7 @@ viz.plot_surface('X', component=0)     # 3D поверхность z = f(s, t)
 cascadoc_new/
 ├── core/       # примитивы
 │   ├── point.py       Point
-│   ├── variable.py    Variable / AnalyticVariable / NumericVariable
+│   ├── variable.py    Variable / AnalyticVariable / NumericVariable / DeferredVariable
 │   └── utils.py       normalize_float, PRECISION
 ├── system/     # модель значений
 │   ├── node.py        Node
@@ -242,13 +203,15 @@ cascadoc_new/
 │   └── mesh.py        CharacteristicMesh
 ├── solvers/    # численные схемы
 │   └── solver.py      Solver, TrapezoidalSolver
-├── blocks/     # композиция: ДУЧП + граничные ОДУ
+├── blocks/     # композиция: ДУЧП + граничные ОДУ + источники
 │   ├── boundary.py    boundary_ode_step / boundary_plain_step
 │   ├── hyp_block.py   HypBlock
 │   ├── ode_block.py   ODEBlock
-│   └── plain_block.py PlainBoundaryBlock
+│   ├── plain_block.py PlainBoundaryBlock
+│   ├── ode_source.py  ODESourceBlock
+│   └── deferred_block.py  DeferredBoundaryBlock
 ├── problem/    # сборка задачи
-│   └── setup.py       build_hyp_system, build_hyp_blocks
+│   └── setup.py       build_hyp_blocks
 └── viz/        # визуализация
     └── plotter.py     Plotter + функции-обёртки
 ```
@@ -259,12 +222,12 @@ cascadoc_new/
 | `system` | `node.py`, `system.py`, `block.py` | реестр переменных, узлы-обёртки и блоки композиции |
 | `mesh` | `mesh.py` | характеристическая сетка |
 | `solvers` | `solver.py` | базовая схема `Solver` и `TrapezoidalSolver` |
-| `blocks` | `boundary.py`, `hyp_block.py`, `ode_block.py`, `plain_block.py` | композиция ДУЧП + граничных ОДУ |
-| `problem` | `setup.py` | сборка задачи (`build_hyp_system`, `build_hyp_blocks`) |
+| `blocks` | `boundary.py`, `hyp_block.py`, `ode_block.py`, `plain_block.py`, `ode_source.py`, `deferred_block.py` | композиция ДУЧП + граничных ОДУ + источники |
+| `problem` | `setup.py` | сборка задачи (`build_hyp_blocks`) |
 | `viz` | `plotter.py` | визуализация: сетка, поля, разрезы, 3D |
 
 Публичный API остаётся плоским: классы и функции доступны прямо из
-`cascadoc_new` (например, `from cascadoc_new import Point, build_hyp_system`).
+`cascadoc_new` (например, `from cascadoc_new import Point, build_hyp_blocks`).
 
 ## Для Rust
 

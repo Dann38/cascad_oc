@@ -135,7 +135,7 @@ class CharacteristicMesh:
                         raw[_FINAL_L].append((i, j, Point(s - (self.T1 - t) * self.C1, self.T1)))
 
         for group in _GROUPS:
-            items = sorted(raw[group], key=lambda e: e[2].t)  # сортировка по t
+            items = sorted(raw[group], key=lambda e: e[2][1])  # сортировка по t
             order: List[Tuple[int, int]] = []
             mapping: Dict[Tuple[int, int], Node] = {}
             nodes: List[Node] = []
@@ -222,17 +222,17 @@ class CharacteristicMesh:
         Возвращает (Point, state) — координату и линейно проинтерполированное
         состояние (np.ndarray произвольной размерности или float).
         """
-        if p1.t == p2.t:
-            if p3.t == p2.t:
+        if p1[1] == p2[1]:
+            if p3[1] == p2[1]:
                 return p1, np.asarray(st1, dtype=float)
-            raise ValueError("Невозможно интерполировать: p1.t == p2.t != p3.t")
-        if p1.t > p2.t:
-            raise ValueError("Ожидается p1.t <= p2.t")
+            raise ValueError("Невозможно интерполировать: p1[1] == p2[1] != p3[1]")
+        if p1[1] > p2[1]:
+            raise ValueError("Ожидается p1[1] <= p2[1]")
 
-        c12 = (p1.s - p2.s) / (p1.t - p2.t)
-        t = 1 / (c12 - c) * (c12 * p1.t - c * p3.t + p3.s - p1.s)
-        alpha = (t - p1.t) / (p2.t - p1.t)
-        s = p1.s + alpha * (p2.s - p1.s)
+        c12 = (p1[0] - p2[0]) / (p1[1] - p2[1])
+        t = 1 / (c12 - c) * (c12 * p1[1] - c * p3[1] + p3[0] - p1[0])
+        alpha = (t - p1[1]) / (p2[1] - p1[1])
+        s = p1[0] + alpha * (p2[0] - p1[0])
 
         a1 = np.asarray(st1, dtype=float)
         a2 = np.asarray(st2, dtype=float)
@@ -244,7 +244,7 @@ class CharacteristicMesh:
         if type_border in ('left', 'right'):
             target = self.S0 if type_border == 'left' else self.S1
             nodes = [node for group in _GROUPS for node in getattr(self, 'nodes_' + group)
-                     if node.s == target]
+                     if node.point[0] == target]
         elif type_border == 'final':
             nodes = list(self.nodes_final_l) + list(self.nodes_final_r)
         elif type_border == 'start':
@@ -253,7 +253,7 @@ class CharacteristicMesh:
             raise ValueError(f"Неизвестная граница: {type_border}")
 
         if sort_s:
-            nodes = [nodes[k] for k in np.argsort([n.s for n in nodes])]
+            nodes = [nodes[k] for k in np.argsort([n.point[0] for n in nodes])]
         if sort_t:
-            nodes = [nodes[k] for k in np.argsort([n.t for n in nodes])]
+            nodes = [nodes[k] for k in np.argsort([n.point[1] for n in nodes])]
         return nodes

@@ -211,3 +211,5 @@ __marimo__/
 .DS_Store
 code
 lit_*/
+.kilo/
+math/

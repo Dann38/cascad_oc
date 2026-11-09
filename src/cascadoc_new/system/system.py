@@ -63,9 +63,7 @@ class System:
     def get_var(self, name: str) -> Variable:
         return self.variables[name]
 
-    def node(self, point: Point, t: Optional[float] = None) -> Node:
-        if t is not None:
-            point = Point(point, t)  # совместимость: node(s, t)
+    def node(self, point: Point) -> Node:
         return Node(point, system=self)
 
     # ------------------------------------------------------------- композиция

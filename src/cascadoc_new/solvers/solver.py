@@ -81,10 +81,10 @@ class TrapezoidalSolver(Solver):
     def solve_center(self, mesh: CharacteristicMesh) -> None:
         for i, j in mesh.order_center:
             node = mesh.center[(i, j)]
-            left, right = self._center_neighbours(mesh, i, j, node.point.s)
-            if node.point.s == self.S0:
+            left, right = self._center_neighbours(mesh, i, j, node.point[0])
+            if node.point[0] == self.S0:
                 node['X'] = self.left_solve(node.point, left.point, right.point, left['X'], right['X'])
-            elif node.point.s == self.S1:
+            elif node.point[0] == self.S1:
                 node['X'] = self.right_solve(node.point, left.point, right.point, left['X'], right['X'])
             else:
                 node['X'] = self.center_solve(node.point, left.point, right.point, left['X'], right['X'])
@@ -103,7 +103,7 @@ class TrapezoidalSolver(Solver):
             node = mesh.final_r[(i, j)]
             point = node.point
 
-            if point.s == self.S1:
+            if point[0] == self.S1:
                 center = mesh.get_center_node(i, j)
                 if mesh.is_from_center(i - 1, j):
                     c2 = mesh.get_center_node(i - 1, j)
@@ -126,7 +126,7 @@ class TrapezoidalSolver(Solver):
             node = mesh.final_l[(i, j)]
             point = node.point
 
-            if point.s == self.S0:
+            if point[0] == self.S0:
                 c0 = mesh.get_center_node(i, j)
                 c2 = mesh.get_center_node(i, j + 1) if mesh.is_from_center(i, j + 1) \
                     else mesh.get_right_node(i, j)
@@ -160,7 +160,7 @@ class TrapezoidalSolver(Solver):
                 node = getattr(mesh, group)[(i, j)]
                 x, y = node['X']
                 node['PSI'] = [phi_dx(node.point, x, y), phi_dy(node.point, x, y)]
-                if node.point.s == self.S0 or node.point.s == self.S1:
+                if node.point[0] == self.S0 or node.point[0] == self.S1:
                     node['p'] = 0.0
 
     def solve_center_adjoint(self, mesh: CharacteristicMesh) -> None:
@@ -168,14 +168,14 @@ class TrapezoidalSolver(Solver):
             node = mesh.center[(i, j)]
             point = node.point
 
-            if point.s == self.S0:
+            if point[0] == self.S0:
                 left = mesh.get_s0_node_conj_left(i, j)
                 right = mesh.get_center_node_conj_right(i, j)
                 psi, p = self.left_conj_solve(
                     point, left.point, right.point, left['PSI'], right['PSI'], left['p'])
                 node['PSI'] = psi
                 node['p'] = p
-            elif point.s == self.S1:
+            elif point[0] == self.S1:
                 left = mesh.get_center_node_conj_left(i, j)
                 right = mesh.get_s1_node_conj_right(i, j)
                 psi, p = self.right_conj_solve(
@@ -196,7 +196,7 @@ class TrapezoidalSolver(Solver):
             node = mesh.start_l[(i, j)]
             point = node.point
 
-            if point.s == self.S0:
+            if point[0] == self.S0:
                 c0 = mesh.get_center_conj_node(i, j)
                 if mesh.is_from_center(i + 1, j):
                     c2 = mesh.get_center_conj_node(i + 1, j)
@@ -223,7 +223,7 @@ class TrapezoidalSolver(Solver):
             node = mesh.start_r[(i, j)]
             point = node.point
 
-            if point.s == self.S1:
+            if point[0] == self.S1:
                 c0 = mesh.get_center_conj_node(i, j)
                 c2 = mesh.get_center_conj_node(i, j - 1) if mesh.is_from_center(i, j - 1) \
                     else mesh.get_left_conj_node(i, j)
@@ -260,9 +260,9 @@ class TrapezoidalSolver(Solver):
             for group in ('start_l', 'start_r'):
                 for i, j in getattr(mesh, 'order_' + group):
                     node = getattr(mesh, group)[(i, j)]
-                    if node.point.s == self.S0 and left_p is not None:
+                    if node.point[0] == self.S0 and left_p is not None:
                         node['p'] = left_p
-                    elif node.point.s == self.S1 and right_p is not None:
+                    elif node.point[0] == self.S1 and right_p is not None:
                         node['p'] = right_p
 
     # ================================================== схема: прямой ход
@@ -274,7 +274,7 @@ class TrapezoidalSolver(Solver):
         F1, F2 = self._coef('F1', point), self._coef('F2', point)
         F1r, F2l = self._coef('F1', point_r), self._coef('F2', point_l)
 
-        hl, hr = point.t - point_l.t, point.t - point_r.t
+        hl, hr = point[1] - point_l[1], point[1] - point_r[1]
         A = [[1 - hr / 2 * B11, -hr / 2 * B12],
              [-hl / 2 * B21, 1 - hl / 2 * B22]]
         b = [st_r[0] + hr / 2 * (B11r * st_r[0] + B12r * st_r[1] + F1 + F1r),
@@ -288,7 +288,7 @@ class TrapezoidalSolver(Solver):
         G21_t, G22_t = self._coef('G21', point), self._coef('G22', point)
         G21_tl, G22_tl = self._coef('G21', point_l), self._coef('G22', point_l)
 
-        hl, hr = point.t - point_l.t, point.t - point_r.t
+        hl, hr = point[1] - point_l[1], point[1] - point_r[1]
         A = [[1 - hr / 2 * B11, -hr / 2 * B12],
              [-hl / 2 * G21_t, 1 - hl / 2 * G22_t]]
         b = [st_r[0] + hr / 2 * (B11r * st_r[0] + B12r * st_r[1] + F1 + F1r),
@@ -302,7 +302,7 @@ class TrapezoidalSolver(Solver):
         G11_t, G12_t = self._coef('G11', point), self._coef('G12', point)
         G11_tr, G12_tr = self._coef('G11', point_r), self._coef('G12', point_r)
 
-        hl, hr = point.t - point_l.t, point.t - point_r.t
+        hl, hr = point[1] - point_l[1], point[1] - point_r[1]
         A = [[1 - hr / 2 * G11_t, -hr / 2 * G12_t],
              [-hl / 2 * B21, 1 - hl / 2 * B22]]
         b = [st_r[0] + hr / 2 * (G11_tr * st_r[0] + G12_tr * st_r[1]),
@@ -318,7 +318,7 @@ class TrapezoidalSolver(Solver):
         F1, F2 = self._coef('F1', point), self._coef('F2', point)
         F1l, F2r = self._coef('F1', point_l), self._coef('F2', point_r)
 
-        hl, hr = point.t - point_l.t, point.t - point_r.t
+        hl, hr = point[1] - point_l[1], point[1] - point_r[1]
         A = [[1 + hl / 2 * B11, hl / 2 * B21],
              [hr / 2 * B12, 1 + hr / 2 * B22]]
         b = [st_l[0] + hl / 2 * (-B11l * st_l[0] - B21l * st_l[1] + F1 + F1l),
@@ -333,7 +333,7 @@ class TrapezoidalSolver(Solver):
         C2 = self._coef('C2', point)
         psi_to_P = 1 / self.C1 * G22_t
 
-        hl, hr = point.t - point_l.t, point.t - point_r.t
+        hl, hr = point[1] - point_l[1], point[1] - point_r[1]
         A = [[1 + hl / 2 * G22_t, hl / 2 * C2],
              [hr / 2 * B12 * psi_to_P, 1 + hr / 2 * B22]]
         b = [p_l + hl / 2 * (-G22_tl * p_l - C2 * st_l[1]),
@@ -350,7 +350,7 @@ class TrapezoidalSolver(Solver):
         C1 = self._coef('C1', point)
         psi_to_P = 1 / self.C2 * G11_t
 
-        hl, hr = point.t - point_l.t, point.t - point_r.t
+        hl, hr = point[1] - point_l[1], point[1] - point_r[1]
         A = [[1 + hl / 2 * B11, hl / 2 * B21 * psi_to_P],
              [hr / 2 * C1, 1 + hr / 2 * G11_t]]
         b = [st_l[0] + hl / 2 * (-B11l * st_l[0] - B21l * st_l[1]),

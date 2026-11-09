@@ -29,25 +29,25 @@ def _register_variables(
     sys.var_analytic('T1', lambda point: T[1])
 
     # ---- аналитические коэффициенты уравнений (пользовательские f(s, t)) ----
-    sys.var_analytic('B11', lambda point: B[0](point.s, point.t))
-    sys.var_analytic('B12', lambda point: B[1](point.s, point.t))
-    sys.var_analytic('B21', lambda point: B[2](point.s, point.t))
-    sys.var_analytic('B22', lambda point: B[3](point.s, point.t))
-    sys.var_analytic('F1', lambda point: F[0](point.s, point.t))
-    sys.var_analytic('F2', lambda point: F[1](point.s, point.t))
+    sys.var_analytic('B11', lambda point: B[0](point[0], point[1]))
+    sys.var_analytic('B12', lambda point: B[1](point[0], point[1]))
+    sys.var_analytic('B21', lambda point: B[2](point[0], point[1]))
+    sys.var_analytic('B22', lambda point: B[3](point[0], point[1]))
+    sys.var_analytic('F1', lambda point: F[0](point[0], point[1]))
+    sys.var_analytic('F2', lambda point: F[1](point[0], point[1]))
 
-    sys.var_analytic('G11', lambda point: G[0][0](point.t))
-    sys.var_analytic('G12', lambda point: G[0][1](point.t))
-    sys.var_analytic('G21', lambda point: G[1][0](point.t))
-    sys.var_analytic('G22', lambda point: G[1][1](point.t))
+    sys.var_analytic('G11', lambda point: G[0][0](point[1]))
+    sys.var_analytic('G12', lambda point: G[0][1](point[1]))
+    sys.var_analytic('G21', lambda point: G[1][0](point[1]))
+    sys.var_analytic('G22', lambda point: G[1][1](point[1]))
 
     # ---- начальные данные прямого хода (аналитически по s) ----
-    sys.var_analytic('x0', lambda point: x0(point.s))
-    sys.var_analytic('y0', lambda point: y0(point.s))
+    sys.var_analytic('x0', lambda point: x0(point[0]))
+    sys.var_analytic('y0', lambda point: y0(point[0]))
 
     # ---- терминальные условия сопряжённого хода (зависят от состояния) ----
-    sys.var_callable('phi_dx', lambda point, x, y: phi_dx(point.s, x, y))
-    sys.var_callable('phi_dy', lambda point, x, y: phi_dy(point.s, x, y))
+    sys.var_callable('phi_dx', lambda point, x, y: phi_dx(point[0], x, y))
+    sys.var_callable('phi_dy', lambda point, x, y: phi_dy(point[0], x, y))
 
     # ---- численные (векторные) переменные ----
     sys.var_numeric('X', dim=2)      # [x, y] — вектор состояния
